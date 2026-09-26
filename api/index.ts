@@ -15,6 +15,21 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(authenticateToken);
 
+// Middleware to ensure database is seeded on cold start before processing routes
+let isSeeded = false;
+app.use(async (req, res, next) => {
+  if (!isSeeded) {
+    try {
+      await seedDatabase();
+      isSeeded = true;
+    } catch (e: any) {
+      console.error('Seeding error in serverless runtime:', e?.message || e);
+    }
+  }
+  next();
+});
+
+// Mount API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/team', teamRoutes);
@@ -27,19 +42,6 @@ app.get('/api/health', (req, res) => {
     college: 'VSB Engineering College',
     time: Date.now()
   });
-});
-
-let isSeeded = false;
-app.use(async (req, res, next) => {
-  if (!isSeeded) {
-    try {
-      await seedDatabase();
-      isSeeded = true;
-    } catch (e) {
-      console.error('Seeding error in serverless runtime:', e);
-    }
-  }
-  next();
 });
 
 export default app;

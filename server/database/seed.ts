@@ -1,18 +1,21 @@
 import bcrypt from 'bcryptjs';
-import { getDb, queryOne, run, saveDb } from './db.js';
+import { getDb, queryOne, query, run, saveDb } from './db.js';
 
 export async function seedDatabase(): Promise<void> {
   const db = await getDb();
 
+  const adminUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
+  const adminPassword = process.env.ADMIN_PASSWORD || 'AdminSecureAI2026!';
+
   // Check if admin already exists
-  const existingAdmin = await queryOne('SELECT id FROM admins WHERE username = ?', ['admin']);
+  const existingAdmin = await queryOne('SELECT id FROM admins WHERE username = ?', [adminUsername]);
   if (!existingAdmin) {
-    const adminHash = await bcrypt.hash('AdminSecureAI2026!', 10);
+    const adminHash = await bcrypt.hash(adminPassword, 10);
     db.run(
       'INSERT INTO admins (username, password_hash) VALUES (?, ?)',
-      ['admin', adminHash]
+      [adminUsername, adminHash]
     );
-    console.log('✓ Admin account seeded (username: admin)');
+    console.log(`✓ Admin account initialized (username: ${adminUsername})`);
   }
 
   // Check if problem statements exist
@@ -76,10 +79,10 @@ export async function seedDatabase(): Promise<void> {
     console.log('✓ 5 Problem statements seeded');
 
     // Create 4 allocation slots for each of the 5 problems (total 20 slots)
-    const allProblems = db.exec('SELECT id, problem_code FROM problem_statements');
-    if (allProblems.length > 0 && allProblems[0].values) {
-      for (const row of allProblems[0].values) {
-        const probId = row[0] as number;
+    const allProblems = await query('SELECT id, problem_code FROM problem_statements');
+    if (allProblems && allProblems.length > 0) {
+      for (const row of allProblems) {
+        const probId = row.id;
         for (let slot = 1; slot <= 4; slot++) {
           db.run(
             'INSERT INTO allocation_slots (problem_id, slot_number, consumed) VALUES (?, ?, 0)',
@@ -89,12 +92,6 @@ export async function seedDatabase(): Promise<void> {
       }
       console.log('✓ 20 Problem allocation slots created (4 per problem)');
     }
-  }
-
-  // Check if teams exist - do not auto seed 20 fake teams, let admin create them manually
-  const existingTeams = await queryOne('SELECT count(*) as count FROM teams');
-  if (!existingTeams) {
-    // Teams table initialized empty
   }
 
   // Check hackathon state
