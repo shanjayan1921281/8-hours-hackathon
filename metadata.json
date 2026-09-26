@@ -1,0 +1,6 @@
+{
+  "name": "8-Hour AI Hackathon Discovery Platform",
+  "description": "8-Hour AI Hackathon Challenge Discovery Platform organized by Neural Minds Club × AI Innovation Club, AIML Dept, VSB Engineering College.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
